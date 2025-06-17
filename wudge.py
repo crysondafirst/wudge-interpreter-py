@@ -2,6 +2,7 @@
 """
 Wudge Programming Language Interpreter
 A file-based interpreter for the Wudge esolang
+Enhanced version with stackable replace patterns
 """
 
 import re
@@ -57,29 +58,33 @@ class WudgeInterpreter:
         return False
     
     def parse_replace_command(self, line):
-        """Parse 'replace a [b/c],[d/e] to f' command"""
-        match = re.match(r'replace\s+(\w+)\s+\[([^/]+)/([^\]]+)\],\[([^/]+)/([^\]]+)\]\s+to\s+(\w+)', line)
-        if match:
-            source_var = match.group(1)
-            pattern1 = match.group(2)
-            replacement1 = match.group(3)
-            pattern2 = match.group(4)
-            replacement2 = match.group(5)
-            target_var = match.group(6)
-            
-            source_value = self.variables.get(source_var, "")
-            
-            # Apply replacements
-            result = source_value.replace(pattern1, replacement1)
-            result = result.replace(pattern2, replacement2)
-            
-            # Append to target variable
-            if target_var in self.variables:
-                self.variables[target_var] += result
-            else:
-                self.variables[target_var] = result
-            return True
-        return False
+        """Parse 'replace a [b/c],[d/e],... to f' command with stackable patterns"""
+        # Match the basic structure: replace source_var ... to target_var
+        match = re.match(r'replace\s+(\w+)\s+(.*?)\s+to\s+(\w+)', line)
+        if not match:
+            return False
+        
+        source_var = match.group(1)
+        patterns_part = match.group(2)
+        target_var = match.group(3)
+        
+        # Extract all [pattern/replacement] pairs
+        pattern_matches = re.findall(r'\[([^/]+)/([^\]]+)\]', patterns_part)
+        
+        if not pattern_matches:
+            return False
+        
+        source_value = self.variables.get(source_var, "")
+        result = source_value
+        
+        # Apply all replacements in order
+        for pattern, replacement in pattern_matches:
+            result = result.replace(pattern, replacement)
+        
+        # Set the target variable to the result (replace, don't append)
+        self.variables[target_var] = result
+        
+        return True
     
     def parse_if_command(self, line):
         """Parse 'if a found [b] do 10' command"""
@@ -167,7 +172,7 @@ def main():
     print("=====================================")
     
     try:
-        filename = input("I need valid Wudge code file: ").strip()
+        filename = input("Enter a file with valid Wudge code: ").strip()
         
         if not filename:
             print("No filename provided. Exiting.")
