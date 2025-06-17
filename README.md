@@ -1,4 +1,4 @@
-# Ampell interpreter
+# Wudge interpreter
 Wudge is a minimalist esoteric programming language with only 6 commands focused on string manipulation and basic control flow. It operates through variable assignment, user input, conditional execution based on pattern matching, and simple jumping for loops and control structures. 
 
 ## Features
