@@ -42,11 +42,21 @@ class WudgeInterpreter:
         match = re.match(r'jump\s+(\d+)', line)
         if match:
             line_num = int(match.group(1))
-            # Convert to 0-based indexing and subtract 2 because main loop will add 1
-            self.current_line = line_num - 2
+            # Convert to 0-based indexing and subtract 1 because main loop will add 1
+            target_line = line_num - 1
+            
+            # Bounds checking
+            if target_line < 0:
+                print(f"Error: Cannot jump to line {line_num} (before start of program)")
+                return False
+            elif target_line >= len(self.lines):
+                print(f"Error: Cannot jump to line {line_num} (beyond end of program)")
+                return False
+            
+            self.current_line = target_line - 1  # Subtract 1 because main loop will add 1
             return True
         return False
-    
+
     def parse_print_command(self, line):
         """Parse 'print a' command"""
         match = re.match(r'print\s+(\w+)', line)
@@ -69,7 +79,7 @@ class WudgeInterpreter:
         target_var = match.group(3)
         
         # Extract all [pattern/replacement] pairs
-        pattern_matches = re.findall(r'\[([^/]+)/([^\]]+)\]', patterns_part)
+        pattern_matches = re.findall(r'\[([^/]*)/([^\]]*)\]', patterns_part)
         
         if not pattern_matches:
             return False
